@@ -1,0 +1,6 @@
+{
+  "name": "Alpha Flow",
+  "description": "Personal money flow tracker, budget manager, and savings planner",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
