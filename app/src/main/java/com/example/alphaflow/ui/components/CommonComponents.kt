@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -54,62 +55,19 @@ fun formatCurrency(amount: Double, hideBalances: Boolean): String {
 
 @Composable
 fun AlphaLogo(size: Dp = 32.dp) {
-    val accent = AlphaTheme.colors.accent
-    val barColor = AlphaTheme.colors.textPrimary
-
     Box(
         modifier = Modifier
             .size(size)
-            .clip(RoundedCornerShape(size * 0.25f))
+            .clip(RoundedCornerShape(size * 0.28f))
             .background(AlphaTheme.colors.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(size * 0.75f)) {
-            val w = this.size.width
-            val h = this.size.height
-
-            // Chevron path
-            val path = Path().apply {
-                moveTo(w * 0.15f, h * 0.85f)
-                lineTo(w * 0.5f, h * 0.15f)
-                lineTo(w * 0.85f, h * 0.85f)
-            }
-            drawPath(
-                path = path,
-                color = accent,
-                style = Stroke(
-                    width = w * 0.10f,
-                    cap = StrokeCap.Round,
-                    join = StrokeJoin.Round
-                )
-            )
-
-            // Flow bars inside chevron
-            val barW = w * 0.08f
-            val cornerR = CornerRadius(barW * 0.35f, barW * 0.35f)
-
-            // Bar 1
-            drawRoundRect(
-                color = barColor,
-                topLeft = Offset(w * 0.33f, h * 0.65f),
-                size = Size(barW, h * 0.12f),
-                cornerRadius = cornerR
-            )
-            // Bar 2
-            drawRoundRect(
-                color = barColor,
-                topLeft = Offset(w * 0.45f, h * 0.55f),
-                size = Size(barW, h * 0.22f),
-                cornerRadius = cornerR
-            )
-            // Bar 3
-            drawRoundRect(
-                color = barColor,
-                topLeft = Offset(w * 0.57f, h * 0.45f),
-                size = Size(barW, h * 0.32f),
-                cornerRadius = cornerR
-            )
-        }
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = com.example.alphaflow.R.drawable.img_app_icon),
+            contentDescription = "Alpha Flow Logo",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+        )
     }
 }
 

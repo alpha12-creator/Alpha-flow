@@ -199,6 +199,9 @@ fun MainScreenContent(
                             editingTx = null
                             preselectedGoalId = null
                         },
+                        onOpenAddTransaction = {
+                            quickAddSheetOpen = true
+                        },
                         onAddAccount = {
                             editingAccount = null
                             accountDialogOpen = true
@@ -206,6 +209,13 @@ fun MainScreenContent(
                         onEditAccount = { acc ->
                             editingAccount = acc
                             accountDialogOpen = true
+                        },
+                        onEditTransaction = { tx ->
+                            editingTx = tx
+                            activeTxType = tx.type
+                        },
+                        onDeleteTransaction = { tx ->
+                            deleteTxTarget = tx
                         },
                         onStartFresh = { viewModel.startFresh() },
                         onCloseDay = { viewModel.closeDay() },
