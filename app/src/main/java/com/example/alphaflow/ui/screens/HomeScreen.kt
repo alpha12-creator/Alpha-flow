@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -32,6 +33,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -39,7 +42,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -86,12 +92,34 @@ fun HomeScreen(
     onReviewTransactions: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val hour = LocalTime.now().hour
-    val greeting = when {
-        hour < 12 -> "Good morning"
-        hour < 18 -> "Good afternoon"
-        else -> "Good evening"
+    val now = LocalTime.now()
+    val today = LocalDate.now()
+    val hour = now.hour
+
+    val (greeting, greetingEmoji, greetingMessage) = when {
+        hour in 5..11 -> Triple(
+            "Good morning",
+            "☀️",
+            "Start your day with clarity. Keep your flow positive and on track."
+        )
+        hour in 12..16 -> Triple(
+            "Good afternoon",
+            "🌤️",
+            "Mid-day check-in. Monitor your daily safe-to-spend allowance."
+        )
+        hour in 17..21 -> Triple(
+            "Good evening",
+            "🌆",
+            "Review your day. Log any afternoon transactions or dinner expenses."
+        )
+        else -> Triple(
+            "Good night",
+            "🌙",
+            "Rest easy. Your finances and savings goals are safely tracked."
+        )
     }
+
+    val formattedDate = today.format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH))
 
     val currentStat = uiState.currentMonthStat
     val inc = currentStat?.income ?: 0.0
@@ -116,17 +144,25 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "$greeting, Alpha",
+                        text = "$greeting, Alpha $greetingEmoji",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = AlphaTheme.colors.textPrimary
                     )
                     Text(
-                        text = "Control your flow. Build your future.",
+                        text = formattedDate,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AlphaTheme.colors.accent
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = greetingMessage,
                         fontSize = 12.sp,
-                        color = AlphaTheme.colors.textMuted
+                        color = AlphaTheme.colors.textMuted,
+                        lineHeight = 16.sp
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -296,49 +332,75 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Quick Action Buttons
+            // Quick Action Buttons - Easy Access
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
                     onClick = { onQuickAdd("inc") },
                     modifier = Modifier
                         .weight(1f)
+                        .height(48.dp)
                         .testTag("add_income_button"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = AlphaTheme.colors.accent,
                         contentColor = AlphaTheme.colors.background
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Text("+ Income", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("+ Income", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
 
-                OutlinedButton(
+                Button(
                     onClick = { onQuickAdd("exp") },
                     modifier = Modifier
                         .weight(1f)
+                        .height(48.dp)
                         .testTag("add_expense_button"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.expense.copy(alpha = 0.15f),
+                        contentColor = AlphaTheme.colors.expense
+                    ),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = AlphaTheme.colors.textPrimary
-                    )
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Text("− Expense", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("− Expense", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
 
-                OutlinedButton(
+                Button(
                     onClick = { onQuickAdd("tr") },
                     modifier = Modifier
                         .weight(1f)
+                        .height(48.dp)
                         .testTag("add_transfer_button"),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.surfaceVariant,
                         contentColor = AlphaTheme.colors.textPrimary
-                    )
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
-                    Text("↗ Transfer", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("⇄ Transfer", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = onReviewTransactions,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("quick_search_button"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.surfaceVariant,
+                        contentColor = AlphaTheme.colors.textPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text("🔍 Search", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -657,37 +719,81 @@ fun RecentTransactionsList(
     onAddTransactionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var selectedFilter by remember { mutableStateOf("all") }
     val accMap = remember(accounts) { accounts.associateBy { it.id } }
     val goalMap = remember(goals) { goals.associateBy { it.id } }
-    val recentTxs = remember(transactions) {
-        transactions.sortedWith(compareByDescending<TransactionEntity> { it.date }.thenByDescending { it.id })
-            .take(5)
+
+    val filteredList = remember(transactions, selectedFilter) {
+        val list = when (selectedFilter) {
+            "inc" -> transactions.filter { it.type == "inc" }
+            "exp" -> transactions.filter { it.type == "exp" }
+            "tr" -> transactions.filter { it.type == "tr" }
+            else -> transactions
+        }
+        list.sortedWith(compareByDescending<TransactionEntity> { it.date }.thenByDescending { it.id })
+    }
+    val recentTxs = remember(filteredList) {
+        filteredList.take(5)
     }
 
-    if (recentTxs.isEmpty()) {
-        FlowCard(modifier = modifier) {
-            EmptyStateView(
-                title = "No recent transactions",
-                message = "Track your money by recording your first transaction.",
-                actionButton = {
-                    Button(
-                        onClick = onAddTransactionClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AlphaTheme.colors.accent,
-                            contentColor = AlphaTheme.colors.background
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("+ Add Transaction", fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            )
-        }
-    } else {
-        Column(
-            modifier = modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Quick Access Filter Chips
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            listOf(
+                "all" to "All",
+                "inc" to "Income",
+                "exp" to "Expenses",
+                "tr" to "Transfers"
+            ).forEach { (typeKey, label) ->
+                val isSelected = selectedFilter == typeKey
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedFilter = typeKey },
+                    label = {
+                        Text(
+                            text = label,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AlphaTheme.colors.accent,
+                        selectedLabelColor = AlphaTheme.colors.background,
+                        containerColor = AlphaTheme.colors.surfaceVariant,
+                        labelColor = AlphaTheme.colors.textPrimary
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("filter_chip_$typeKey")
+                )
+            }
+        }
+
+        if (recentTxs.isEmpty()) {
+            FlowCard {
+                EmptyStateView(
+                    title = if (selectedFilter == "all") "No recent transactions" else "No $selectedFilter transactions found",
+                    message = "Track your money by recording your first transaction.",
+                    actionButton = {
+                        Button(
+                            onClick = onAddTransactionClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AlphaTheme.colors.accent,
+                                contentColor = AlphaTheme.colors.background
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("+ Add Transaction", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                )
+            }
+        } else {
             recentTxs.forEach { tx ->
                 RecentTransactionCard(
                     tx = tx,
@@ -699,7 +805,7 @@ fun RecentTransactionsList(
                 )
             }
 
-            if (transactions.size > 5) {
+            if (filteredList.size > 5) {
                 OutlinedButton(
                     onClick = onViewAllClick,
                     modifier = Modifier
@@ -712,7 +818,7 @@ fun RecentTransactionsList(
                     )
                 ) {
                     Text(
-                        text = "View all ${transactions.size} transactions",
+                        text = "View all ${filteredList.size} transactions",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -850,24 +956,24 @@ fun RecentTransactionCard(
                 ) {
                     IconButton(
                         onClick = onEdit,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit transaction",
                             tint = AlphaTheme.colors.textMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     IconButton(
                         onClick = onDelete,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
                             contentDescription = "Delete transaction",
                             tint = AlphaTheme.colors.expense,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

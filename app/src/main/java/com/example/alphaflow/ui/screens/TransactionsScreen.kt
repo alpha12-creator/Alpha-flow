@@ -365,20 +365,20 @@ fun TransactionRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = "Edit transaction",
                             tint = AlphaTheme.colors.textMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Delete",
+                            contentDescription = "Delete transaction",
                             tint = AlphaTheme.colors.expense,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

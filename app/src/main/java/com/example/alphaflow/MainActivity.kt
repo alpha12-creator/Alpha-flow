@@ -48,8 +48,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.example.alphaflow.ui.components.formatCurrency
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -163,6 +169,7 @@ fun MainScreenContent(
 
     var deleteTxTarget by remember { mutableStateOf<TransactionEntity?>(null) }
     var deleteGoalTarget by remember { mutableStateOf<GoalEntity?>(null) }
+    var startFreshConfirmOpen by remember { mutableStateOf(false) }
 
     // Handle Back Press
     BackHandler(enabled = uiState.currentTab != NavigationTab.HOME) {
@@ -217,7 +224,7 @@ fun MainScreenContent(
                         onDeleteTransaction = { tx ->
                             deleteTxTarget = tx
                         },
-                        onStartFresh = { viewModel.startFresh() },
+                        onStartFresh = { startFreshConfirmOpen = true },
                         onCloseDay = { viewModel.closeDay() },
                         onReviewTransactions = {
                             viewModel.updateFilters(uiState.filterState.copy(dateRange = "today"))
@@ -423,56 +430,283 @@ fun MainScreenContent(
         )
     }
 
-    // Delete Transaction Confirm
+    // Delete Transaction Confirm - Enhanced Safety
     if (deleteTxTarget != null) {
+        val tx = deleteTxTarget!!
+        var confirmSafetyChecked by remember(tx.id) { mutableStateOf(false) }
+        val txTitle = tx.note ?: tx.category ?: "Transaction"
+        val fromAcc = uiState.accounts.find { it.id == tx.accountId }?.name ?: "Account"
+
         AlertDialog(
             onDismissRequest = { deleteTxTarget = null },
-            title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold) },
-            text = { Text("This transaction will be removed and balances recalculated.") },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = AlphaTheme.colors.expense,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Delete Transaction?",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Are you sure you want to permanently remove this transaction?",
+                        fontSize = 13.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                    Card(
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = AlphaTheme.colors.surfaceVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = txTitle,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = AlphaTheme.colors.textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Amount: ${formatCurrency(tx.amount, false)} · $fromAcc",
+                                fontSize = 12.sp,
+                                color = AlphaTheme.colors.textMuted
+                            )
+                            Text(
+                                text = "Date: ${tx.date}",
+                                fontSize = 11.sp,
+                                color = AlphaTheme.colors.textMuted
+                            )
+                        }
+                    }
+                    Text(
+                        text = "⚠️ Deleting will permanently update account balances and budget reports. This action cannot be reversed.",
+                        fontSize = 11.sp,
+                        color = AlphaTheme.colors.expense,
+                        lineHeight = 15.sp
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { confirmSafetyChecked = !confirmSafetyChecked }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = confirmSafetyChecked,
+                            onCheckedChange = { confirmSafetyChecked = it },
+                            colors = CheckboxDefaults.colors(checkedColor = AlphaTheme.colors.expense)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "I understand this deletion is permanent",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AlphaTheme.colors.textPrimary
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 Button(
                     onClick = {
-                        deleteTxTarget?.let { viewModel.deleteTransaction(it.id) }
+                        viewModel.deleteTransaction(tx.id)
                         deleteTxTarget = null
                     },
+                    enabled = confirmSafetyChecked,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = AlphaTheme.colors.expense,
-                        contentColor = Color.White
-                    )
+                        contentColor = Color.White,
+                        disabledContainerColor = AlphaTheme.colors.surfaceVariant,
+                        disabledContentColor = AlphaTheme.colors.textMuted
+                    ),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Delete Transaction", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTxTarget = null }) {
+                OutlinedButton(
+                    onClick = { deleteTxTarget = null },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text("Cancel")
                 }
             }
         )
     }
 
-    // Delete Goal Confirm
+    // Delete Goal Confirm - Enhanced Safety
     if (deleteGoalTarget != null) {
+        val goal = deleteGoalTarget!!
+        var confirmSafetyChecked by remember(goal.id) { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { deleteGoalTarget = null },
-            title = { Text("Delete Goal?", fontWeight = FontWeight.Bold) },
-            text = { Text("Money saved to this goal will return to its source accounts.") },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = AlphaTheme.colors.expense,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text("Delete Savings Goal?", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Are you sure you want to delete '${goal.name}'?",
+                        fontSize = 14.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                    val savedAmount = uiState.goalsWithProgress.find { it.goal.id == goal.id }?.currentAmount ?: goal.seedAmount
+                    Text(
+                        text = "Any money saved toward this goal (${formatCurrency(savedAmount, false)}) will return to its source accounts.",
+                        fontSize = 12.sp,
+                        color = AlphaTheme.colors.textMuted
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { confirmSafetyChecked = !confirmSafetyChecked }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = confirmSafetyChecked,
+                            onCheckedChange = { confirmSafetyChecked = it },
+                            colors = CheckboxDefaults.colors(checkedColor = AlphaTheme.colors.expense)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Confirm deleting this goal",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AlphaTheme.colors.textPrimary
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 Button(
                     onClick = {
-                        deleteGoalTarget?.let { viewModel.deleteGoal(it.id) }
+                        viewModel.deleteGoal(goal.id)
                         deleteGoalTarget = null
                     },
+                    enabled = confirmSafetyChecked,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = AlphaTheme.colors.expense,
-                        contentColor = Color.White
-                    )
+                        contentColor = Color.White,
+                        disabledContainerColor = AlphaTheme.colors.surfaceVariant,
+                        disabledContentColor = AlphaTheme.colors.textMuted
+                    ),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Delete Goal", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteGoalTarget = null }) {
+                OutlinedButton(
+                    onClick = { deleteGoalTarget = null },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Start Fresh Confirm - Enhanced Safety
+    if (startFreshConfirmOpen) {
+        var confirmSafetyChecked by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { startFreshConfirmOpen = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = AlphaTheme.colors.accent,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text("Start Fresh with Empty Data?", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "This will wipe all sample transactions, demo goals, and demo account records so you can start with a clean slate for your personal finances.",
+                        fontSize = 13.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                    Text(
+                        text = "⚠️ All demo records will be erased immediately.",
+                        fontSize = 11.sp,
+                        color = AlphaTheme.colors.textMuted
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { confirmSafetyChecked = !confirmSafetyChecked }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = confirmSafetyChecked,
+                            onCheckedChange = { confirmSafetyChecked = it },
+                            colors = CheckboxDefaults.colors(checkedColor = AlphaTheme.colors.accent)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "I understand and want to start fresh",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AlphaTheme.colors.textPrimary
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.startFresh()
+                        startFreshConfirmOpen = false
+                    },
+                    enabled = confirmSafetyChecked,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.accent,
+                        contentColor = AlphaTheme.colors.background,
+                        disabledContainerColor = AlphaTheme.colors.surfaceVariant,
+                        disabledContentColor = AlphaTheme.colors.textMuted
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Clear & Start Fresh", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { startFreshConfirmOpen = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
                     Text("Cancel")
                 }
             }

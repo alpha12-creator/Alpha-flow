@@ -3,6 +3,7 @@ package com.example.alphaflow.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,12 +12,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -375,13 +382,49 @@ fun SettingsScreen(
         )
     }
 
-    // Confirm Start Fresh Dialog
+    // Confirm Start Fresh Dialog - Enhanced Safety
     if (confirmFreshDialogOpen) {
+        var confirmSafetyChecked by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { confirmFreshDialogOpen = false },
-            title = { Text("Start fresh?", fontWeight = FontWeight.Bold) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = AlphaTheme.colors.accent
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Start fresh?", fontWeight = FontWeight.Bold)
+                }
+            },
             text = {
-                Text("This removes all demo transactions, goals, and budgets. Your accounts stay with zero balance so you can enter your own opening balances.")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "This removes all demo transactions, goals, and budgets. Your accounts will be set to zero so you can enter your own real transactions.",
+                        fontSize = 13.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { confirmSafetyChecked = !confirmSafetyChecked }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = confirmSafetyChecked,
+                            onCheckedChange = { confirmSafetyChecked = it },
+                            colors = CheckboxDefaults.colors(checkedColor = AlphaTheme.colors.accent)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "I understand and want to clear demo records",
+                            fontSize = 12.sp,
+                            color = AlphaTheme.colors.textPrimary
+                        )
+                    }
+                }
             },
             confirmButton = {
                 Button(
@@ -389,24 +432,72 @@ fun SettingsScreen(
                         onStartFresh()
                         confirmFreshDialogOpen = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlphaTheme.colors.accent, contentColor = AlphaTheme.colors.background)
+                    enabled = confirmSafetyChecked,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.accent,
+                        contentColor = AlphaTheme.colors.background,
+                        disabledContainerColor = AlphaTheme.colors.surfaceVariant,
+                        disabledContentColor = AlphaTheme.colors.textMuted
+                    ),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Start fresh", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmFreshDialogOpen = false }) { Text("Cancel") }
+                OutlinedButton(
+                    onClick = { confirmFreshDialogOpen = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Cancel")
+                }
             }
         )
     }
 
-    // Confirm Restore Demo Dialog
+    // Confirm Restore Demo Dialog - Enhanced Safety
     if (confirmResetDialogOpen) {
+        var confirmSafetyChecked by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { confirmResetDialogOpen = false },
-            title = { Text("Restore demo data?", fontWeight = FontWeight.Bold) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = AlphaTheme.colors.expense
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Restore demo data?", fontWeight = FontWeight.Bold)
+                }
+            },
             text = {
-                Text("This will replace all current data with the sample demo data.")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "⚠️ This will overwrite your currently entered transactions, accounts, and budgets with sample demo records.",
+                        fontSize = 13.sp,
+                        color = AlphaTheme.colors.textPrimary
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { confirmSafetyChecked = !confirmSafetyChecked }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Checkbox(
+                            checked = confirmSafetyChecked,
+                            onCheckedChange = { confirmSafetyChecked = it },
+                            colors = CheckboxDefaults.colors(checkedColor = AlphaTheme.colors.expense)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "I understand this replaces my existing data",
+                            fontSize = 12.sp,
+                            color = AlphaTheme.colors.textPrimary
+                        )
+                    }
+                }
             },
             confirmButton = {
                 Button(
@@ -414,13 +505,25 @@ fun SettingsScreen(
                         onRestoreDemoData()
                         confirmResetDialogOpen = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AlphaTheme.colors.expense, contentColor = androidx.compose.ui.graphics.Color.White)
+                    enabled = confirmSafetyChecked,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AlphaTheme.colors.expense,
+                        contentColor = androidx.compose.ui.graphics.Color.White,
+                        disabledContainerColor = AlphaTheme.colors.surfaceVariant,
+                        disabledContentColor = AlphaTheme.colors.textMuted
+                    ),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Restore", fontWeight = FontWeight.Bold)
+                    Text("Restore Demo Data", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmResetDialogOpen = false }) { Text("Cancel") }
+                OutlinedButton(
+                    onClick = { confirmResetDialogOpen = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Cancel")
+                }
             }
         )
     }
